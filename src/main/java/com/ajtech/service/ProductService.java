@@ -1,31 +1,43 @@
 package com.ajtech.service;
 
 import com.ajtech.entity.Product;
-
-import com.ajtech.repo.ProductDao;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.ajtech.repo.jpa.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProductService {
 
-    @Autowired
-    ProductDao productDAO;
-    public Product save(Product product){
-        return productDAO.save(product);
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
     }
 
-    public List<Product> findAll(){
-        return productDAO.findAll();
+    @Cacheable(value = "products", key = "#id")
+    public Optional<Product> getProductById(Long id) {
+        return productRepository.findById(id);
     }
 
-    public Product findProductById(String id){
-        return productDAO.findProductById(id);
+    @CacheEvict(value = "products", key = "#product.id")
+    public Product saveProduct(Product product) {
+        return productRepository.save(product);
     }
 
-    public String delete(String id){
-        return productDAO.deleteProduct(id);
+    @CachePut(value = "products", key = "#id")
+    public Product updateProduct(Long id, Product product) {
+        // Ensure that the product exists in the DB before updating
+        Optional<Product> existingProduct = productRepository.findById(id);
+        if (existingProduct.isPresent()) {
+            product.setId(id); // Set the ID from the URL if it's a valid product
+            return productRepository.save(product); // Save the updated product to DB
+        } else {
+            throw new RuntimeException("Product not found with ID: " + id); // Handle product not found
+        }
     }
 }
+

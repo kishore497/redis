@@ -1,67 +1,34 @@
 package com.ajtech.controller;
 
 import com.ajtech.entity.Product;
-import com.ajtech.repo.ProductDao;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import com.ajtech.service.ProductService;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Optional;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/products")
 public class ProductController {
 
-    @Autowired
-    private ProductDao dao;
+    private final ProductService productService;
 
-    @PostMapping
-    public ResponseEntity<Product> save(@RequestBody Product product) {
-        try {
-            Product savedProduct = dao.save(product);
-            return new ResponseEntity<>(savedProduct, HttpStatus.CREATED);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public ProductController(ProductService productService) {
+        this.productService = productService;
     }
 
-    @GetMapping
-    public ResponseEntity<List<Product>> getAllProducts() {
-        try {
-            List<Product> products = dao.findAll();
-            return new ResponseEntity<>(products, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    @PostMapping
+    public Product saveProduct(@RequestBody Product product) {
+        return productService.saveProduct(product);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Product> findProduct(@PathVariable String id) {
-        try {
-            Product product = dao.findProductById(id);
-            if (product != null) {
-                return new ResponseEntity<>(product, HttpStatus.OK);
-            } else {
-                return new ResponseEntity<>(null, HttpStatus.NOT_FOUND);
-            }
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+    public Optional<Product> getProduct(@PathVariable Long id) {
+        return productService.getProductById(id);
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<String> remove(@PathVariable String id) {
-        try {
-            String result = dao.deleteProduct(id);
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } catch (Exception e) {
-            return new ResponseEntity<>(null, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleException(Exception e) {
-        return new ResponseEntity<>(e.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
+    @PutMapping("/{id}")
+    public Product updateProduct(@PathVariable Long id, @RequestBody Product product) {
+        return productService.updateProduct(id, product);
     }
 }
+
